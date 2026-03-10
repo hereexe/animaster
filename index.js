@@ -1,5 +1,8 @@
 addListeners();
 
+let moveAndHideAnimation = null;
+let heartBeatingAnimation = null;
+
 function addListeners() {
     document.getElementById('fadeInPlay')
         .addEventListener('click', function () {
@@ -7,14 +10,11 @@ function addListeners() {
             animaster().fadeIn(block, 5000);
         });
 
-    // --- Обработчик для fadeOut ---
-    const fadeOutPlayBtn = document.getElementById('fadeOutPlay');
-    if (fadeOutPlayBtn) {
-        fadeOutPlayBtn.addEventListener('click', function () {
+    document.getElementById('fadeOutPlay')
+        .addEventListener('click', function () {
             const block = document.getElementById('fadeOutBlock');
             animaster().fadeOut(block, 5000);
         });
-    }
 
     document.getElementById('movePlay')
         .addEventListener('click', function () {
@@ -28,57 +28,55 @@ function addListeners() {
             animaster().scale(block, 1000, 1.25);
         });
 
-    // --- Слушатели для moveAndHide и кнопки отмены ---
-    let moveAndHideAnimation;
-    const moveAndHidePlayBtn = document.getElementById('moveAndHidePlay');
-    const moveAndHideResetBtn = document.getElementById('moveAndHideReset');
-
-    if (moveAndHidePlayBtn && moveAndHideResetBtn) {
-        moveAndHidePlayBtn.addEventListener('click', function () {
+    document.getElementById('moveAndHidePlay')
+        .addEventListener('click', function () {
             const block = document.getElementById('moveAndHideBlock');
-            moveAndHideAnimation = animaster().moveAndHide(block, 1000, { x: 100, y: 20 });
+            moveAndHideAnimation = animaster().moveAndHide(block, 5000);
         });
 
-        moveAndHideResetBtn.addEventListener('click', function () {
+    document.getElementById('moveAndHideReset')
+        .addEventListener('click', function () {
             if (moveAndHideAnimation) {
                 moveAndHideAnimation.reset();
+                moveAndHideAnimation = null;
             }
         });
-    }
 
-    // --- Слушатель для showAndHide ---
-    const showAndHidePlayBtn = document.getElementById('showAndHidePlay');
-    if (showAndHidePlayBtn) {
-        showAndHidePlayBtn.addEventListener('click', function () {
+    document.getElementById('showAndHidePlay')
+        .addEventListener('click', function () {
             const block = document.getElementById('showAndHideBlock');
-            animaster().showAndHide(block, 3000); // Например, 3 секунды
+            animaster().showAndHide(block, 5000);
         });
-    }
 
-    // --- Слушатели для heartBeating и кнопки stop ---
-    let heartBeatingAnimation;
-    const heartBeatingPlayBtn = document.getElementById('heartBeatingPlay');
-    const heartBeatingStopBtn = document.getElementById('heartBeatingStop');
-
-    if (heartBeatingPlayBtn && heartBeatingStopBtn) {
-        heartBeatingPlayBtn.addEventListener('click', function () {
+    document.getElementById('heartBeatingPlay')
+        .addEventListener('click', function () {
             const block = document.getElementById('heartBeatingBlock');
-            // Сохраняем объект анимации, чтобы потом вызвать stop()
             heartBeatingAnimation = animaster().heartBeating(block);
         });
 
-        heartBeatingStopBtn.addEventListener('click', function () {
+    document.getElementById('heartBeatingStop')
+        .addEventListener('click', function () {
             if (heartBeatingAnimation) {
                 heartBeatingAnimation.stop();
+                heartBeatingAnimation = null;
             }
         });
-    }
 
-    // --- Пример работы пользовательской анимации из пункта 11 ---
-    const customPlayBtn = document.getElementById('customPlay');
-    if (customPlayBtn) {
-        customPlayBtn.addEventListener('click', function () {
-            const block = document.getElementById('customBlock');
+    // Задача 14: buildHandler — клик по блоку запускает анимацию
+    const worryAnimationHandler = animaster()
+        .addMove(200, { x: 80, y: 0 })
+        .addMove(200, { x: 0, y: 0 })
+        .addMove(200, { x: 80, y: 0 })
+        .addMove(200, { x: 0, y: 0 })
+        .buildHandler();
+
+    document.getElementById('worryAnimationBlock')
+        .addEventListener('click', worryAnimationHandler);
+
+    // Задача 15: кастомная анимация
+    document.getElementById('customAnimationPlay')
+        .addEventListener('click', function () {
+            const block = document.getElementById('customAnimationBlock');
             const customAnimation = animaster()
                 .addMove(200, { x: 40, y: 40 })
                 .addScale(800, 1.3)
@@ -88,176 +86,207 @@ function addListeners() {
                 .addScale(800, 0.7)
                 .addMove(200, { x: 0, y: 0 })
                 .addScale(800, 1);
-            
             customAnimation.play(block);
         });
-    }
 }
 
+function getTransform(translation, ratio) {
+    const result = [];
+    if (translation) {
+        result.push(`translate(${translation.x}px,${translation.y}px)`);
+    }
+    if (ratio) {
+        result.push(`scale(${ratio})`);
+    }
+    return result.join(' ');
+}
+
+/**
+ * Задачи 1–2: функция-фабрика, возвращающая объект анимастера.
+ * Все анимации инкапсулированы внутри.
+ */
 function animaster() {
-    // --- Служебные функции отмены ---
-    function resetFadeIn(element) {
-        element.style.transitionDuration = null;
-        element.classList.remove('show');
-        element.classList.add('hide');
-    }
-
-    function resetFadeOut(element) {
-        element.style.transitionDuration = null;
-        element.classList.remove('hide');
-        element.classList.add('show');
-    }
-
-    function resetMoveAndScale(element) {
-        element.style.transitionDuration = null;
-        element.style.transform = null;
-    }
-
-    // --- Внутренние элементарные операции (работают напрямую с DOM) ---
-    function fadeIn(element, duration) {
+    /**
+     * Элементарные анимации (приватные)
+     */
+    function _fadeIn(element, duration) {
         element.style.transitionDuration = `${duration}ms`;
         element.classList.remove('hide');
         element.classList.add('show');
     }
 
-    function fadeOut(element, duration) {
+    function _fadeOut(element, duration) {
         element.style.transitionDuration = `${duration}ms`;
         element.classList.remove('show');
         element.classList.add('hide');
     }
 
-    function move(element, duration, translation) {
+    function _move(element, duration, translation) {
         element.style.transitionDuration = `${duration}ms`;
         element.style.transform = getTransform(translation, null);
     }
 
-    function scale(element, duration, ratio) {
+    function _scale(element, duration, ratio) {
         element.style.transitionDuration = `${duration}ms`;
         element.style.transform = getTransform(null, ratio);
     }
 
-    // --- Сложные анимации ---
-    
-    // 1. moveAndHide: 2/5 времени двигается, 3/5 исчезает
-    function moveAndHide(element, duration, translation = { x: 100, y: 20 }) {
-        const moveDuration = duration * 0.4;
-        const hideDuration = duration * 0.6;
-
-        move(element, moveDuration, translation);
-        
-        const timeout = setTimeout(() => {
-            fadeOut(element, hideDuration);
-        }, moveDuration);
-
-        return {
-            reset() {
-                clearTimeout(timeout); 
-                resetMoveAndScale(element); 
-                resetFadeOut(element); 
-            }
-        };
+    /**
+     * Задача 6: функции отмены (приватные, недоступные снаружи)
+     */
+    function resetFadeIn(element) {
+        element.classList.remove('show');
+        element.classList.add('hide');
+        element.style.transitionDuration = null;
     }
 
-    // 2. showAndHide: появляется (1/3), ждет (1/3), исчезает (1/3)
-    function showAndHide(element, duration) {
-        const stepDuration = duration / 3;
-        
-        fadeIn(element, stepDuration);
-        
-        // Ждем 2/3 времени (время появления + время ожидания), затем запускаем исчезновение
-        setTimeout(() => {
-            fadeOut(element, stepDuration);
-        }, stepDuration * 2);
+    function resetFadeOut(element) {
+        element.classList.remove('hide');
+        element.classList.add('show');
+        element.style.transitionDuration = null;
     }
 
-    // 3. heartBeating: пульсирует бесконечно
-    function heartBeating(element) {
-        const stepDuration = 500; // Каждый шаг (увеличение или уменьшение) длится полсекунды
-        
-        // Функция одного такта биения (увеличился, затем уменьшился)
-        const tick = () => {
-            scale(element, stepDuration, 1.4);
-            setTimeout(() => {
-                scale(element, stepDuration, 1);
-            }, stepDuration);
-        };
-        
-        // Делаем первый удар сразу
-        tick();
-        
-        // Затем повторяем каждые 1000мс (500мс туда + 500мс обратно)
-        const intervalId = setInterval(tick, stepDuration * 2);
-
-        // Возвращаем объект для остановки
-        return {
-            stop() {
-                clearInterval(intervalId);
-            }
-        };
+    function resetMoveAndScale(element) {
+        element.style.transform = null;
+        element.style.transitionDuration = null;
     }
 
-    // Возвращаемый объект (Публичное API)
-    return {
-        moveAndHide,
-        showAndHide,
-        heartBeating, // Теперь новые анимации доступны снаружи
-        
-        _steps: [], 
-
-        // --- Методы для создания цепочки (Fluent API) ---
-        addMove(duration, translation) {
-            this._steps.push({ name: 'move', duration: duration, params: translation });
-            return this;
-        },
-        addScale(duration, ratio) {
-            this._steps.push({ name: 'scale', duration: duration, params: ratio });
-            return this;
-        },
-        addFadeIn(duration) {
-            this._steps.push({ name: 'fadeIn', duration: duration });
-            return this;
-        },
-        addFadeOut(duration) {
-            this._steps.push({ name: 'fadeOut', duration: duration });
-            return this;
-        },
-
-        // Выполняет все шаги по очереди
-        play(element) {
-            let currentDelay = 0;
-            
-            this._steps.forEach(step => {
-                setTimeout(() => {
-                    if (step.name === 'move') {
-                        move(element, step.duration, step.params);
-                    } else if (step.name === 'scale') {
-                        scale(element, step.duration, step.params);
-                    } else if (step.name === 'fadeIn') {
-                        fadeIn(element, step.duration);
-                    } else if (step.name === 'fadeOut') {
-                        fadeOut(element, step.duration);
-                    }
-                }, currentDelay);
-                
-                currentDelay += step.duration;
-            });
-        },
-
-        // --- Базовые методы оборачивают add* и сразу вызывают play ---
-        move(element, duration, translation) {
-            this.addMove(duration, translation).play(element);
-        },
-        scale(element, duration, ratio) {
-            this.addScale(duration, ratio).play(element);
-        },
-        fadeIn(element, duration) {
-            this.addFadeIn(duration).play(element);
-        },
-        fadeOut(element, duration) {
-            this.addFadeOut(duration).play(element);
+    /**
+     * Выполняет один шаг анимации
+     */
+    function executeStep(element, step) {
+        switch (step.type) {
+            case 'move':
+                _move(element, step.duration, step.params.translation);
+                break;
+            case 'scale':
+                _scale(element, step.duration, step.params.ratio);
+                break;
+            case 'fadeIn':
+                _fadeIn(element, step.duration);
+                break;
+            case 'fadeOut':
+                _fadeOut(element, step.duration);
+                break;
+            case 'delay':
+                break;
         }
+    }
 
+    return {
+        /**
+         * Задача 8: приватное поле — массив шагов анимации
+         */
+        _steps: [],
 
+        /**
+         * Задача 16: клонирование для иммутабельности цепочек.
+         * Каждый add-метод возвращает новый объект с копией _steps.
+         */
+        _clone() {
+            const instance = animaster();
+            instance._steps = this._steps.slice();
+            return instance;
+        },
+
+        /**
+         * Задачи 8, 10: методы добавления шагов (возвращают новый объект)
+         */
+        addMove(duration, translation) {
+            const clone = this._clone();
+            clone._steps.push({ type: 'move', duration, params: { translation } });
+            return clone;
+        },
+
+        addScale(duration, ratio) {
+            const clone = this._clone();
+            clone._steps.push({ type: 'scale', duration, params: { ratio } });
+            return clone;
+        },
+
+        addFadeIn(duration) {
+            const clone = this._clone();
+            clone._steps.push({ type: 'fadeIn', duration, params: {} });
+            return clone;
+        },
+
+        addFadeOut(duration) {
+            const clone = this._clone();
+            clone._steps.push({ type: 'fadeOut', duration, params: {} });
+            return clone;
+        },
+
+        /**
+         * Задача 12: пауза между шагами (для showAndHide)
+         */
+        addDelay(duration) {
+            const clone = this._clone();
+            clone._steps.push({ type: 'delay', duration, params: {} });
+            return clone;
+        },
+
+        /**
+         * Задача 13: запуск анимации, возвращает { stop(), reset() }.
+         * Задача 12: флаг cycled для бесконечного повтора.
+         */
+        play(element, cycled = false) {
+            const steps = this._steps;
+            const timers = [];
+            const initialClasses = [...element.classList];
+            const initialTransform = element.style.transform;
+
+            function runSteps() {
+                let delay = 0;
+                for (const step of steps) {
+                    const timer = setTimeout(
+                        () => executeStep(element, step),
+                        delay
+                    );
+                    timers.push(timer);
+                    delay += step.duration;
+                }
+                if (cycled) {
+                    const cycleTimer = setTimeout(runSteps, delay);
+                    timers.push(cycleTimer);
+                }
+            }
+
+            runSteps();
+
+            return {
+                stop() {
+                    timers.forEach(clearTimeout);
+                },
+                reset() {
+                    this.stop();
+                    resetMoveAndScale(element);
+                    element.className = initialClasses.join(' ');
+                }
+            };
+        },
+
+        /**
+         * Задачи 9–10: прямые методы через цепочки
+         */
+        move(element, duration, translation) {
+            return this.addMove(duration, translation).play(element);
+        },
+
+        fadeIn(element, duration) {
+            return this.addFadeIn(duration).play(element);
+        },
+
+        fadeOut(element, duration) {
+            return this.addFadeOut(duration).play(element);
+        },
+
+        scale(element, duration, ratio) {
+            return this.addScale(duration, ratio).play(element);
+        },
+
+        /**
+         * Задача 12: сложные анимации через add-методы
+         */
         moveAndHide(element, duration) {
             return this
                 .addMove(duration * 2 / 5, { x: 100, y: 20 })
@@ -280,16 +309,16 @@ function animaster() {
                 .addScale(500, 1)
                 .play(element, true);
         },
-    }
-}
 
-function getTransform(translation, ratio) {
-    const result = [];
-    if (translation) {
-        result.push(`translate(${translation.x}px,${translation.y}px)`);
-    }
-    if (ratio) {
-        result.push(`scale(${ratio})`);
-    }
-    return result.join(' ');
+        /**
+         * Задача 14: возвращает обработчик для addEventListener.
+         * this внутри обработчика = DOM-элемент (не стрелочная функция).
+         */
+        buildHandler() {
+            const animation = this;
+            return function () {
+                animation.play(this);
+            };
+        }
+    };
 }

@@ -52,7 +52,7 @@ function addListeners() {
                 .addScale(800, 0.7)
                 .addMove(200, { x: 0, y: 0 })
                 .addScale(800, 1);
-            
+
             customAnimation.play(block);
         });
     }
@@ -108,16 +108,16 @@ function animaster() {
         const hideDuration = duration * 0.6;
 
         move(element, moveDuration, translation);
-        
+
         const timeout = setTimeout(() => {
             fadeOut(element, hideDuration);
         }, moveDuration);
 
         return {
             reset() {
-                clearTimeout(timeout); 
-                resetMoveAndScale(element); 
-                resetFadeOut(element); 
+                clearTimeout(timeout);
+                resetMoveAndScale(element);
+                resetFadeOut(element);
             }
         };
     }
@@ -125,8 +125,8 @@ function animaster() {
     // Возвращаемый объект (Публичное API)
     return {
         moveAndHide, // Остается без изменений
-        
-        _steps: [], 
+
+        _steps: [],
 
         // --- Пункт 10: Методы для создания цепочки (Fluent API) ---
         addMove(duration, translation) {
@@ -149,7 +149,7 @@ function animaster() {
         // Выполняет все шаги по очереди
         play(element) {
             let currentDelay = 0;
-            
+
             this._steps.forEach(step => {
                 setTimeout(() => {
                     if (step.name === 'move') {
@@ -163,7 +163,7 @@ function animaster() {
                         fadeOut(element, step.duration);
                     }
                 }, currentDelay);
-                
+
                 currentDelay += step.duration;
             });
             // Важно: мы НЕ очищаем массив this._steps, чтобы объект 
@@ -184,6 +184,30 @@ function animaster() {
         fadeOut(element, duration) {
             this.addFadeOut(duration).play(element);
         }
+
+
+                moveAndHide(element, duration) {
+            return this
+                .addMove(duration * 2 / 5, { x: 100, y: 20 })
+                .addFadeOut(duration * 3 / 5)
+                .play(element);
+        },
+
+        showAndHide(element, duration) {
+            const step = duration / 3;
+            return this
+                .addFadeIn(step)
+                .addDelay(step)
+                .addFadeOut(step)
+                .play(element);
+        },
+
+        heartBeating(element) {
+            return this
+                .addScale(500, 1.4)
+                .addScale(500, 1)
+                .play(element, true);
+        },
     }
 }
 

@@ -88,7 +88,7 @@ function addListeners() {
                 .addScale(800, 0.7)
                 .addMove(200, { x: 0, y: 0 })
                 .addScale(800, 1);
-
+            
             customAnimation.play(block);
         });
     }
@@ -144,16 +144,16 @@ function animaster() {
         const hideDuration = duration * 0.6;
 
         move(element, moveDuration, translation);
-
+        
         const timeout = setTimeout(() => {
             fadeOut(element, hideDuration);
         }, moveDuration);
 
         return {
             reset() {
-                clearTimeout(timeout);
-                resetMoveAndScale(element);
-                resetFadeOut(element);
+                clearTimeout(timeout); 
+                resetMoveAndScale(element); 
+                resetFadeOut(element); 
             }
         };
     }
@@ -198,7 +198,9 @@ function animaster() {
 
     // Возвращаемый объект (Публичное API)
     return {
-        moveAndHide, // Остается без изменений
+        moveAndHide,
+        showAndHide,
+        heartBeating, // Теперь новые анимации доступны снаружи
         
         _steps: [], 
 
@@ -223,7 +225,7 @@ function animaster() {
         // Выполняет все шаги по очереди
         play(element) {
             let currentDelay = 0;
-
+            
             this._steps.forEach(step => {
                 setTimeout(() => {
                     if (step.name === 'move') {
@@ -236,7 +238,7 @@ function animaster() {
                         fadeOut(element, step.duration);
                     }
                 }, currentDelay);
-
+                
                 currentDelay += step.duration;
             });
         },

@@ -53,6 +53,12 @@ function animaster() {
         element.style.transitionDuration = `${duration}ms`;
         element.style.transform = getTransform(null, ratio);
     }
+
+    return {
+        fadeIn,
+        move,
+        scale
+    }
 }
 
 function getTransform(translation, ratio) {

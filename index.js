@@ -7,6 +7,15 @@ function addListeners() {
             animaster().fadeIn(block, 5000);
         });
 
+    // --- Обработчик для fadeOut ---
+    const fadeOutPlayBtn = document.getElementById('fadeOutPlay');
+    if (fadeOutPlayBtn) {
+        fadeOutPlayBtn.addEventListener('click', function () {
+            const block = document.getElementById('fadeOutBlock');
+            animaster().fadeOut(block, 5000);
+        });
+    }
+
     document.getElementById('movePlay')
         .addEventListener('click', function () {
             const block = document.getElementById('moveBlock');
@@ -19,7 +28,7 @@ function addListeners() {
             animaster().scale(block, 1000, 1.25);
         });
 
-    // Слушатели для moveAndHide и кнопки отмены
+    // --- Слушатели для moveAndHide и кнопки отмены ---
     let moveAndHideAnimation;
     const moveAndHidePlayBtn = document.getElementById('moveAndHidePlay');
     const moveAndHideResetBtn = document.getElementById('moveAndHideReset');
@@ -37,8 +46,35 @@ function addListeners() {
         });
     }
 
+    // --- Слушатель для showAndHide ---
+    const showAndHidePlayBtn = document.getElementById('showAndHidePlay');
+    if (showAndHidePlayBtn) {
+        showAndHidePlayBtn.addEventListener('click', function () {
+            const block = document.getElementById('showAndHideBlock');
+            animaster().showAndHide(block, 3000); // Например, 3 секунды
+        });
+    }
+
+    // --- Слушатели для heartBeating и кнопки stop ---
+    let heartBeatingAnimation;
+    const heartBeatingPlayBtn = document.getElementById('heartBeatingPlay');
+    const heartBeatingStopBtn = document.getElementById('heartBeatingStop');
+
+    if (heartBeatingPlayBtn && heartBeatingStopBtn) {
+        heartBeatingPlayBtn.addEventListener('click', function () {
+            const block = document.getElementById('heartBeatingBlock');
+            // Сохраняем объект анимации, чтобы потом вызвать stop()
+            heartBeatingAnimation = animaster().heartBeating(block);
+        });
+
+        heartBeatingStopBtn.addEventListener('click', function () {
+            if (heartBeatingAnimation) {
+                heartBeatingAnimation.stop();
+            }
+        });
+    }
+
     // --- Пример работы пользовательской анимации из пункта 11 ---
-    // Если на странице есть кнопка с id "customPlay" и блок "customBlock":
     const customPlayBtn = document.getElementById('customPlay');
     if (customPlayBtn) {
         customPlayBtn.addEventListener('click', function () {
@@ -100,9 +136,9 @@ function animaster() {
         element.style.transform = getTransform(null, ratio);
     }
 
-    // --- Сложная анимация moveAndHide ---
-    // Она продолжает использовать внутренние функции `move` и `fadeOut`,
-    // поэтому изменения публичного API её не ломают.
+    // --- Сложные анимации ---
+    
+    // 1. moveAndHide: 2/5 времени двигается, 3/5 исчезает
     function moveAndHide(element, duration, translation = { x: 100, y: 20 }) {
         const moveDuration = duration * 0.4;
         const hideDuration = duration * 0.6;
@@ -122,13 +158,53 @@ function animaster() {
         };
     }
 
+    // 2. showAndHide: появляется (1/3), ждет (1/3), исчезает (1/3)
+    function showAndHide(element, duration) {
+        const stepDuration = duration / 3;
+        
+        fadeIn(element, stepDuration);
+        
+        // Ждем 2/3 времени (время появления + время ожидания), затем запускаем исчезновение
+        setTimeout(() => {
+            fadeOut(element, stepDuration);
+        }, stepDuration * 2);
+    }
+
+    // 3. heartBeating: пульсирует бесконечно
+    function heartBeating(element) {
+        const stepDuration = 500; // Каждый шаг (увеличение или уменьшение) длится полсекунды
+        
+        // Функция одного такта биения (увеличился, затем уменьшился)
+        const tick = () => {
+            scale(element, stepDuration, 1.4);
+            setTimeout(() => {
+                scale(element, stepDuration, 1);
+            }, stepDuration);
+        };
+        
+        // Делаем первый удар сразу
+        tick();
+        
+        // Затем повторяем каждые 1000мс (500мс туда + 500мс обратно)
+        const intervalId = setInterval(tick, stepDuration * 2);
+
+        // Возвращаем объект для остановки
+        return {
+            stop() {
+                clearInterval(intervalId);
+            }
+        };
+    }
+
     // Возвращаемый объект (Публичное API)
     return {
-        moveAndHide, // Остается без изменений
+        moveAndHide,
+        showAndHide,
+        heartBeating, // Теперь новые анимации доступны снаружи
         
         _steps: [], 
 
-        // --- Пункт 10: Методы для создания цепочки (Fluent API) ---
+        // --- Методы для создания цепочки (Fluent API) ---
         addMove(duration, translation) {
             this._steps.push({ name: 'move', duration: duration, params: translation });
             return this;
@@ -153,7 +229,6 @@ function animaster() {
             this._steps.forEach(step => {
                 setTimeout(() => {
                     if (step.name === 'move') {
-                        // Вызываем внутреннюю функцию move из замыкания
                         move(element, step.duration, step.params);
                     } else if (step.name === 'scale') {
                         scale(element, step.duration, step.params);
@@ -166,12 +241,9 @@ function animaster() {
                 
                 currentDelay += step.duration;
             });
-            // Важно: мы НЕ очищаем массив this._steps, чтобы объект 
-            // пользовательской анимации можно было применять многократно.
         },
 
-        // --- Пункты 9 и 10: Переписываем базовые методы ---
-        // Теперь они просто оборачивают новые методы add* и сразу вызывают play
+        // --- Базовые методы оборачивают add* и сразу вызывают play ---
         move(element, duration, translation) {
             this.addMove(duration, translation).play(element);
         },

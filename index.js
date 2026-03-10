@@ -62,7 +62,6 @@ function addListeners() {
             }
         });
 
-    // Задача 14: buildHandler — клик по блоку запускает анимацию
     const worryAnimationHandler = animaster()
         .addMove(200, { x: 80, y: 0 })
         .addMove(200, { x: 0, y: 0 })
@@ -73,7 +72,6 @@ function addListeners() {
     document.getElementById('worryAnimationBlock')
         .addEventListener('click', worryAnimationHandler);
 
-    // Задача 15: кастомная анимация
     document.getElementById('customAnimationPlay')
         .addEventListener('click', function () {
             const block = document.getElementById('customAnimationBlock');
@@ -101,14 +99,7 @@ function getTransform(translation, ratio) {
     return result.join(' ');
 }
 
-/**
- * Задачи 1–2: функция-фабрика, возвращающая объект анимастера.
- * Все анимации инкапсулированы внутри.
- */
 function animaster() {
-    /**
-     * Элементарные анимации (приватные)
-     */
     function _fadeIn(element, duration) {
         element.style.transitionDuration = `${duration}ms`;
         element.classList.remove('hide');
@@ -131,9 +122,6 @@ function animaster() {
         element.style.transform = getTransform(null, ratio);
     }
 
-    /**
-     * Задача 6: функции отмены (приватные, недоступные снаружи)
-     */
     function resetFadeIn(element) {
         element.classList.remove('show');
         element.classList.add('hide');
@@ -151,9 +139,6 @@ function animaster() {
         element.style.transitionDuration = null;
     }
 
-    /**
-     * Выполняет один шаг анимации
-     */
     function executeStep(element, step) {
         switch (step.type) {
             case 'move':
@@ -174,24 +159,14 @@ function animaster() {
     }
 
     return {
-        /**
-         * Задача 8: приватное поле — массив шагов анимации
-         */
         _steps: [],
 
-        /**
-         * Задача 16: клонирование для иммутабельности цепочек.
-         * Каждый add-метод возвращает новый объект с копией _steps.
-         */
         _clone() {
             const instance = animaster();
             instance._steps = this._steps.slice();
             return instance;
         },
 
-        /**
-         * Задачи 8, 10: методы добавления шагов (возвращают новый объект)
-         */
         addMove(duration, translation) {
             const clone = this._clone();
             clone._steps.push({ type: 'move', duration, params: { translation } });
@@ -216,19 +191,12 @@ function animaster() {
             return clone;
         },
 
-        /**
-         * Задача 12: пауза между шагами (для showAndHide)
-         */
         addDelay(duration) {
             const clone = this._clone();
             clone._steps.push({ type: 'delay', duration, params: {} });
             return clone;
         },
 
-        /**
-         * Задача 13: запуск анимации, возвращает { stop(), reset() }.
-         * Задача 12: флаг cycled для бесконечного повтора.
-         */
         play(element, cycled = false) {
             const steps = this._steps;
             const timers = [];
@@ -265,9 +233,6 @@ function animaster() {
             };
         },
 
-        /**
-         * Задачи 9–10: прямые методы через цепочки
-         */
         move(element, duration, translation) {
             return this.addMove(duration, translation).play(element);
         },
@@ -284,9 +249,6 @@ function animaster() {
             return this.addScale(duration, ratio).play(element);
         },
 
-        /**
-         * Задача 12: сложные анимации через add-методы
-         */
         moveAndHide(element, duration) {
             return this
                 .addMove(duration * 2 / 5, { x: 100, y: 20 })
@@ -310,10 +272,6 @@ function animaster() {
                 .play(element, true);
         },
 
-        /**
-         * Задача 14: возвращает обработчик для addEventListener.
-         * this внутри обработчика = DOM-элемент (не стрелочная функция).
-         */
         buildHandler() {
             const animation = this;
             return function () {

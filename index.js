@@ -256,7 +256,7 @@ function animaster() {
         }
 
 
-                moveAndHide(element, duration) {
+        moveAndHide(element, duration) {
             return this
                 .addMove(duration * 2 / 5, { x: 100, y: 20 })
                 .addFadeOut(duration * 3 / 5)
